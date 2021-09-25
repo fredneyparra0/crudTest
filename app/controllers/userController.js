@@ -1,4 +1,26 @@
 const modelUser = require('../models/userModel')
+const bcrypt = require('bcrypt');
+
+
+const generateHash  = async (password) => {
+	try {
+		const hashGenerate = await bcrypt.hash(password, 10)
+		return hashGenerate
+	} catch (err) {
+		console.log(`ERROR IN GENERATE HASH!!! ${err}`)
+	}
+}
+
+const authToken = async (id ,passFront) => {
+	try {
+		const getUser = await modelUser.findOne({ _id: id });
+
+		const authUser = await bcrypt.compare(passFront, getUser.pass)
+		return authUser
+	} catch (err) {
+		console.log(`ERROR IN VALIDATE TOKEN ${err}`)
+	}
+}
 
 const getUsers = async (req, res) => {
 	try {
@@ -16,7 +38,15 @@ const getUsers = async (req, res) => {
 
 const createUser = async (req, res) => {
 	try {
-		const user = new modelUser(req.body);
+		const { name, email, pass } = req.body;
+		const hashPass = await generateHash(pass)
+
+		const user = new modelUser({
+			name,
+			email,
+			pass: hashPass
+		});
+
 		await user.save()
 		res.status(200).json({
 			content: 'user create'
@@ -32,9 +62,13 @@ const createUser = async (req, res) => {
 
 const updateUser = async (req, res) => {
 	try {
+		const passwordSimulateFront = '12345'
+
 		const query = { _id: req.params.id }
 
-		const updateUser = await modelUser.findOneAndUpdate(query, req.body)
+		const validateToken = await authToken(req.params.id, passwordSimulateFront)
+
+		//const updateUser = await modelUser.findOneAndUpdate(query, req.body)
 		res.status(200).json({
 			error: null,
 			content: 'data is update succesful'
@@ -65,6 +99,7 @@ const deleteUser = async (req, res) => {
 		})
 	}
 }
+
 
 module.exports = {
 	getUsers,
