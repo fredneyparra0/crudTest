@@ -1,6 +1,9 @@
 const modelUserHome = require('../models/homeUserModel')
 const bcrypt = require('bcrypt')
+const jwt = require('jsonwebtoken')
+//const jwtMethods = require('../middleware/authToken')
 
+const generateToken = require('../midelware/autentication')
 
 const generateHash = async (pass) => {
 	const hash = await bcrypt.hash(pass, 10)
@@ -15,8 +18,6 @@ const validateHash = async (passFront, passBd) => {
 		console.log(err)
 	} 
 }
-
-
 
 // Create newUser
 const singup = async (req, res) => {
@@ -43,7 +44,6 @@ const singup = async (req, res) => {
 	}
 }
 
-
 // login User
 const singin = async (req, res) => {
 	try {
@@ -51,13 +51,18 @@ const singin = async (req, res) => {
 		const getUser = await modelUserHome.findOne({ email: body.email })
 		const validatePass = await validateHash(body.password, getUser.password)
 
-		if (!validatePass) {
+		if (validatePass) {
+			const tokenGenerate = await generateToken.generateToken();
+			res.status(200).json({
+				error: false,
+				content: 'autentication sucessfull',
+				token: tokenGenerate
+			})
+		} else {
 			res.json({
 				error: true,
 				content: 'the data entered is incorrect'
 			})
-		} else {
-			res.status(200).json(validatePass)
 		}
 	} catch (err) {
 		console.log(`ERROR IN SIGN ${err}`)
@@ -73,8 +78,27 @@ const home = (req, res) => {
 }
 
 
+const validateToken = async (req, res) => {
+	try {
+		const token = req.headers['access-token']
+
+		if (token) {
+			const tokenValidate = await jwt.verify(token, process.env.KEY_SECRET);
+
+			console.log(`Token is => ${tokenValidate.check}`)
+			res.send('ok')
+		} 
+	} catch (err) {
+		res.send({
+			error: true,
+			content: 'invalid token'
+		})
+	}
+}
+
 module.exports = {
 	singup,
 	singin,
-	home
+	home,
+	validateToken
 }

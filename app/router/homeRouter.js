@@ -8,4 +8,6 @@ router.post('/signup', controllerHome.singup)
 
 router.post('/singin', controllerHome.singin)
 
+router.post('/validate', controllerHome.validateToken)
+
 module.exports = router
