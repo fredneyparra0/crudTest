@@ -74,6 +74,8 @@ const singin = async (req, res) => {
 }
 
 const home = (req, res) => {
+
+	
 	res.send('welcome to home')
 }
 
